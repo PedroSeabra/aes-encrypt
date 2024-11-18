@@ -1,5 +1,6 @@
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.HexFormat;
 
 public class Utils {
     public static String bytesToHex(byte[] bytes) {
@@ -14,12 +15,13 @@ public class Utils {
 
     public static byte[][] stringToAESByteArray(String input) {
         byte[][] response = new byte[4][4];
-        byte[] inputBytes = input.getBytes(StandardCharsets.US_ASCII);
+//        byte[] inputBytes = input.getBytes(StandardCharsets.US_ASCII);
+        byte[] inputBytes = HexFormat.of().parseHex(input);
 
-        int i = 0, j = 0;
+        int i, j = 0;
         while(j < 4) {
+            i = 0;
             while(i < 4) {
-                System.out.println(j*4 + i);
                 response[i][j] = inputBytes[j*4 + i];
                 i++;
             }
@@ -29,8 +31,20 @@ public class Utils {
         return response;
     }
 
+    public static String byteArraytoString(byte[][] byteAES) {
+        byte[] flattenedBytes = new byte[16];
+
+        for(var j = 0; j < 4; j++) {
+            for(var i = 0; i < 4; i++) {
+                flattenedBytes[(j*4)+i] = byteAES[i][j];
+            }
+        }
+
+        return bytesToHex(byteAES[0]) + bytesToHex(byteAES[1]) + bytesToHex(byteAES[2]) + bytesToHex(byteAES[3]);
+    }
+
     public static byte sBoxSubstitute(byte input) {
-        int i = input >>> 4, j = input & 0xf;
+        int i = (input & 0xFF) >>> 4, j = (input & 0xFF)  & 0xf;
         return (byte) Constants.SBox[i][j];
     }
 
@@ -39,23 +53,24 @@ public class Utils {
 
         //A rodada inicial (expandedKey[0]) usa as colunas da própria chave
         for(var i = 0; i < 4; i++) {
-            expandedKey[0][i] = new byte[]{key[0][i*4], key[1][i*4], key[2][i*4], key[3][i*4]};
+            expandedKey[0][i] = new byte[]{key[0][i], key[1][i], key[2][i], key[3][i]};
         }
 
         for(var i = 4; i < 44; i++) {
             var temp = expandedKey[(i-1)/4][(i-1)%4];
             if(i%4 == 0) {
                 var changedWord = SubstituteWord(RotateWord(temp));
-                var leftMostByte = (byte) (changedWord[0] ^ Constants.RoundConstants[i/4]);
+                var leftMostByte = (byte) (changedWord[0] ^ Constants.RoundConstants[(i/4)-1]);
                 temp = new byte[]{leftMostByte, changedWord[1], changedWord[2], changedWord[3]};
             }
 
-            expandedKey[i/4][i%4] = new byte[]{
+             var test = new byte[]{
                 (byte) (expandedKey[(i-4)/4][(i-4)%4][0] ^ temp[0]),
                 (byte) (expandedKey[(i-4)/4][(i-4)%4][1] ^ temp[1]),
                 (byte) (expandedKey[(i-4)/4][(i-4)%4][2] ^ temp[2]),
                 (byte) (expandedKey[(i-4)/4][(i-4)%4][3] ^ temp[3])
             };
+            expandedKey[i/4][i%4] = test;
         }
 
         return expandedKey;
@@ -66,11 +81,29 @@ public class Utils {
     }
 
     private static byte[] SubstituteWord(byte[] word) {
+//        System.out.println(word);
+//        System.out.println(sBoxSubstitute(word[0]) & 0xFF);
+
         return new byte[]{
-                sBoxSubstitute(word[0]),
-                sBoxSubstitute(word[1]),
-                sBoxSubstitute(word[2]),
-                sBoxSubstitute(word[3]),
+                (byte) (sBoxSubstitute(word[0]) & 0xFF),
+                (byte) (sBoxSubstitute(word[1]) & 0xFF),
+                (byte) (sBoxSubstitute(word[2]) & 0xFF),
+                (byte) (sBoxSubstitute(word[3]) & 0xFF),
         };
+    }
+
+    public static byte multiplyByte(byte input, int times) {
+        byte result = input;
+        int multiplicationsByTwo = (int) (times/2);
+        var i = 0;
+
+        while(i < multiplicationsByTwo) {
+            result = (byte) (input << 1);
+            i++;
+        }
+        if(times%2 == 1)
+            result = (byte) (result ^ input);
+
+        return result;
     }
 }
