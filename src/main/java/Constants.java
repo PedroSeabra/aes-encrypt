@@ -1,7 +1,4 @@
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class Constants {
 
@@ -27,13 +24,6 @@ public class Constants {
     };
 
     public static final int[] RoundConstants = {0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36};
-
-    public static final int[][] mixColumnsTable = {
-            {0x02, 0x03, 0x01, 0x01},
-            {0x01, 0x02, 0x03, 0x01},
-            {0x01, 0x01, 0x02, 0x03},
-            {0x03, 0x01, 0x01, 0x02}
-    };
 
     public static final byte[] HEX_ARRAY = "0123456789ABCDEF".getBytes(StandardCharsets.US_ASCII);
 }

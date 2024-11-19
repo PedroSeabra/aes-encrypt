@@ -1,5 +1,4 @@
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HexFormat;
 
 public class Utils {
@@ -40,7 +39,19 @@ public class Utils {
             }
         }
 
-        return bytesToHex(byteAES[0]) + bytesToHex(byteAES[1]) + bytesToHex(byteAES[2]) + bytesToHex(byteAES[3]);
+        return bytesToHex(flattenedBytes);
+    }
+
+    public static String byteArraytoStringRowWise(byte[][] byteAES) {
+        byte[] flattenedBytes = new byte[16];
+
+        for(var j = 0; j < 4; j++) {
+            for(var i = 0; i < 4; i++) {
+                flattenedBytes[(j*4)+i] = byteAES[j][i];
+            }
+        }
+
+        return bytesToHex(flattenedBytes);
     }
 
     public static byte sBoxSubstitute(byte input) {
@@ -81,9 +92,6 @@ public class Utils {
     }
 
     private static byte[] SubstituteWord(byte[] word) {
-//        System.out.println(word);
-//        System.out.println(sBoxSubstitute(word[0]) & 0xFF);
-
         return new byte[]{
                 (byte) (sBoxSubstitute(word[0]) & 0xFF),
                 (byte) (sBoxSubstitute(word[1]) & 0xFF),
@@ -93,15 +101,26 @@ public class Utils {
     }
 
     public static byte multiplyByte(byte input, int times) {
+        if(times == 1)
+            return input;
+
         byte result = input;
-        int multiplicationsByTwo = (int) (times/2);
+        int leftmostBit;
+
+        int multiplicationsByTwo = (times/2);
         var i = 0;
 
         while(i < multiplicationsByTwo) {
-            result = (byte) (input << 1);
+            //desloca o bit mais à esquerda para a última posição (mais à direita) e compara com 1
+            leftmostBit = (result >> 7) & 1;
+
+            result = (byte) (result << 1);
+            if(leftmostBit == 1)
+                result = (byte) (result ^ 0x1b); //0x1b == 0001 1011 = 27
+
             i++;
         }
-        if(times%2 == 1)
+        if(times%2 == 1) //soma
             result = (byte) (result ^ input);
 
         return result;
